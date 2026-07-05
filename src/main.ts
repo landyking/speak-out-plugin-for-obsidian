@@ -1,7 +1,7 @@
 import { Plugin } from 'obsidian';
 import { debugLog } from './logger';
 import { registerSpeakOutPostProcessor } from './markdown';
-import { DEFAULT_SETTINGS, type SpeakOutSettings } from './settings';
+import { normalizeSettings, type SpeakOutSettings } from './settings';
 import { SpeakOutSettingTab } from './settings-tab';
 import { SpeechService } from './speech';
 
@@ -33,11 +33,7 @@ export default class SpeakOutPlugin extends Plugin {
 	}
 
 	private async loadSettings() {
-		this.settings = Object.assign(
-			{},
-			DEFAULT_SETTINGS,
-			(await this.loadData()) as Partial<SpeakOutSettings>,
-		);
+		this.settings = normalizeSettings(await this.loadData());
 	}
 
 	async saveSettings() {

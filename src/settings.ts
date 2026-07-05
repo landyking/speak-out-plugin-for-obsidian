@@ -10,6 +10,16 @@ export const DEFAULT_SETTINGS: SpeakOutSettings = {
 	voiceId: '',
 };
 
+export function normalizeSettings(data: unknown): SpeakOutSettings {
+	const persistedSettings = isSettingsRecord(data) ? data : {};
+
+	return {
+		speechEngineId: getStringSetting(persistedSettings.speechEngineId),
+		voiceEngineId: getStringSetting(persistedSettings.voiceEngineId),
+		voiceId: getStringSetting(persistedSettings.voiceId),
+	};
+}
+
 export function getVoiceSelectionValue(settings: SpeakOutSettings): string {
 	if (!settings.voiceEngineId || !settings.voiceId) {
 		return '';
@@ -52,4 +62,14 @@ export function parseVoiceSelectionValue(
 
 export function getVoiceOptionValue(engineId: string, voiceId: string): string {
 	return JSON.stringify([engineId, voiceId]);
+}
+
+function isSettingsRecord(
+	data: unknown,
+): data is Partial<Record<keyof SpeakOutSettings, unknown>> {
+	return typeof data === 'object' && data !== null;
+}
+
+function getStringSetting(value: unknown): string {
+	return typeof value === 'string' ? value : '';
 }
