@@ -69,6 +69,8 @@ export function registerSpeakOutPostProcessor(
 			});
 		}
 
+		let sourceSearchStart = 0;
+
 		for (const sourceMatch of sourceMatches) {
 			const text = getSpeakableSourceText(sourceMatch.content);
 
@@ -79,7 +81,13 @@ export function registerSpeakOutPostProcessor(
 			});
 
 			const buttonEl = createSpeakOutButton(el);
-			el.appendChild(buttonEl);
+			const insertion = insertButtonAfterSourceText(
+				el,
+				buttonEl,
+				text,
+				sourceSearchStart,
+			);
+			sourceSearchStart = insertion.nextSearchStart;
 			ctx.addChild(
 				new SourceSpeakOutButton(buttonEl, text, speechService, ctx.sourcePath),
 			);
@@ -87,6 +95,7 @@ export function registerSpeakOutPostProcessor(
 			debugLog('Inserted source speak-out button.', {
 				docId: ctx.docId,
 				sourcePath: ctx.sourcePath,
+				insertedInline: insertion.insertedInline,
 			});
 		}
 	});
@@ -106,6 +115,16 @@ function getSpeakOutElements(el: HTMLElement): HTMLElement[] {
 
 interface SourceSpeakOutMatch {
 	content: string;
+}
+
+interface TextPosition {
+	node: Text;
+	offset: number;
+}
+
+interface TextRange {
+	end: TextPosition;
+	nextSearchStart: number;
 }
 
 function getSourceSpeakOutMatches(source: string): SourceSpeakOutMatch[] {
@@ -131,6 +150,133 @@ function createSpeakOutButton(parentEl: HTMLElement): HTMLButtonElement {
 	setIcon(buttonEl, 'volume-2');
 
 	return buttonEl;
+}
+
+function insertButtonAfterSourceText(
+	rootEl: HTMLElement,
+	buttonEl: HTMLButtonElement,
+	text: string,
+	searchStart: number,
+): { insertedInline: boolean; nextSearchStart: number } {
+	const range = findRenderedTextRange(rootEl, text, searchStart);
+
+	if (range === null) {
+		rootEl.appendChild(buttonEl);
+		return {
+			insertedInline: false,
+			nextSearchStart: searchStart,
+		};
+	}
+
+	insertElementAtTextPosition(buttonEl, range.end);
+	return {
+		insertedInline: true,
+		nextSearchStart: range.nextSearchStart,
+	};
+}
+
+function findRenderedTextRange(
+	rootEl: HTMLElement,
+	text: string,
+	searchStart: number,
+): TextRange | null {
+	if (!text) {
+		return null;
+	}
+
+	const textPositions = getTextPositions(rootEl);
+	const renderedText = textPositions.map((position) => position.node.data).join('');
+	const startIndex = renderedText.indexOf(text, searchStart);
+
+	if (startIndex === -1) {
+		return null;
+	}
+
+	const endIndex = startIndex + text.length;
+	const end = getTextPositionAtIndex(textPositions, endIndex);
+
+	if (end === null) {
+		return null;
+	}
+
+	return {
+		end,
+		nextSearchStart: endIndex,
+	};
+}
+
+function getTextPositions(rootEl: HTMLElement): TextPosition[] {
+	const textPositions: TextPosition[] = [];
+	const walker = rootEl.ownerDocument.createTreeWalker(
+		rootEl,
+		NodeFilter.SHOW_TEXT,
+		{
+			acceptNode(node) {
+				if (
+					node.parentElement === null ||
+					node.parentElement.closest('.speak-out-button') !== null
+				) {
+					return NodeFilter.FILTER_REJECT;
+				}
+
+				return NodeFilter.FILTER_ACCEPT;
+			},
+		},
+	);
+
+	let node = walker.nextNode();
+	while (node !== null) {
+		if (node.instanceOf(Text)) {
+			textPositions.push({
+				node,
+				offset: 0,
+			});
+		}
+		node = walker.nextNode();
+	}
+
+	return textPositions;
+}
+
+function getTextPositionAtIndex(
+	textPositions: TextPosition[],
+	index: number,
+): TextPosition | null {
+	let currentIndex = 0;
+
+	for (const position of textPositions) {
+		const nextIndex = currentIndex + position.node.data.length;
+
+		if (index <= nextIndex) {
+			return {
+				node: position.node,
+				offset: index - currentIndex,
+			};
+		}
+
+		currentIndex = nextIndex;
+	}
+
+	return null;
+}
+
+function insertElementAtTextPosition(
+	element: HTMLElement,
+	position: TextPosition,
+) {
+	const parentEl = position.node.parentElement;
+
+	if (parentEl === null) {
+		return;
+	}
+
+	if (position.offset < position.node.data.length) {
+		const remainder = position.node.splitText(position.offset);
+		parentEl.insertBefore(element, remainder);
+		return;
+	}
+
+	parentEl.insertBefore(element, position.node.nextSibling);
 }
 
 class SpeakOutButton extends MarkdownRenderChild {

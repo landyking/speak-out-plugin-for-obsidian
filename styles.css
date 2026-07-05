@@ -1,26 +1,32 @@
-.markdown-preview-view .speak-out-button {
+:is(.markdown-preview-view, .markdown-rendered) .speak-out-button {
 	align-items: center;
+	appearance: none;
 	background: transparent;
 	border: 0;
 	border-radius: var(--radius-s);
+	box-shadow: none;
 	color: var(--text-muted);
 	cursor: pointer;
 	display: inline-flex;
-	height: var(--size-4-5);
+	font: inherit;
+	height: 1.4em;
 	justify-content: center;
-	margin-inline-start: var(--size-2-1);
-	padding: var(--size-2-1);
-	vertical-align: text-bottom;
-	width: var(--size-4-5);
+	line-height: 1;
+	margin-inline-start: 0.25em;
+	min-height: 0;
+	min-width: 0;
+	padding: 0.1em;
+	vertical-align: -0.15em;
+	width: 1.4em;
 }
 
-.markdown-preview-view .speak-out-button:hover,
-.markdown-preview-view .speak-out-button:focus-visible {
+:is(.markdown-preview-view, .markdown-rendered) .speak-out-button:hover,
+:is(.markdown-preview-view, .markdown-rendered) .speak-out-button:focus-visible {
 	background: var(--background-modifier-hover);
 	color: var(--text-normal);
 }
 
-.markdown-preview-view .speak-out-button:focus-visible {
+:is(.markdown-preview-view, .markdown-rendered) .speak-out-button:focus-visible {
 	box-shadow: 0 0 0 2px var(--background-modifier-border-focus);
 	outline: none;
 }
