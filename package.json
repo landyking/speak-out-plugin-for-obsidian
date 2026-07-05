@@ -7,6 +7,11 @@
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
 		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
+		"release": "npm run lint && npm run build && npm run release:package",
+		"release:package": "mkdir -p dist && cp manifest.json main.js styles.css dist/ && cd dist && zip -q speakout-${npm_package_version}.zip manifest.json main.js styles.css",
+		"release:patch": "npm version patch && npm run release",
+		"release:minor": "npm version minor && npm run release",
+		"release:major": "npm version major && npm run release",
 		"version": "node version-bump.mjs && git add manifest.json versions.json",
 		"lint": "eslint ."
 	},
