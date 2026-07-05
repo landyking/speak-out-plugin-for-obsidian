@@ -5,6 +5,7 @@ const LINK_MARKER_SELECTOR = [
 	'a[data-href="speak:"]',
 	'a[data-href="speak-out:"]',
 ].join(', ');
+const LINK_MARKER_CLASSES = ['external-link', 'internal-link', 'is-unresolved'];
 const LINK_MARKER_TARGETS = new Set(['speak:', 'speak-out:']);
 
 export abstract class SpeakOutMarker {
@@ -35,6 +36,7 @@ export class LinkSpeakOutMarker extends SpeakOutMarker {
 		el.removeAttribute('target');
 		el.removeAttribute('rel');
 		el.removeAttribute('tabindex');
+		el.classList.remove(...LINK_MARKER_CLASSES);
 	}
 }
 

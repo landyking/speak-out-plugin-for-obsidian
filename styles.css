@@ -7,6 +7,17 @@
 	padding: 0.05em 0.15em;
 }
 
+:is(.markdown-preview-view, .markdown-rendered) a.speak-out-content {
+	color: inherit;
+	cursor: inherit;
+	text-decoration: none;
+}
+
+:is(.markdown-preview-view, .markdown-rendered) a.speak-out-content:hover {
+	color: inherit;
+	text-decoration: none;
+}
+
 :is(.markdown-preview-view, .markdown-rendered) .speak-out-button {
 	align-items: center;
 	appearance: none;
