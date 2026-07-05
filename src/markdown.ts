@@ -11,6 +11,10 @@ export const SPEAK_OUT_TAG = 'speak-out';
 const SPEAK_OUT_CONTENT_CLASS = 'speak-out-content';
 const SPEAK_OUT_CONTENT_TITLE = 'Speak Out content';
 
+/**
+ * Registers the markdown post processor that finds <speak-out> source blocks,
+ * locates their rendered text, and attaches a speak button to each match.
+ */
 export function registerSpeakOutPostProcessor(
 	plugin: Plugin,
 	speechService: SpeechService,
@@ -20,6 +24,8 @@ export function registerSpeakOutPostProcessor(
 	});
 
 	plugin.registerMarkdownPostProcessor((el, ctx) => {
+		// Obsidian gives the rendered DOM here, so use section source text to find
+		// custom tags that have already been stripped from the preview DOM.
 		const sectionInfo = ctx.getSectionInfo(el);
 		const sourceMatches =
 			sectionInfo === null ? [] : getSourceSpeakOutMatches(sectionInfo.text);
@@ -35,6 +41,8 @@ export function registerSpeakOutPostProcessor(
 		let sourceSearchStart = 0;
 
 		for (const sourceMatch of sourceMatches) {
+			// Convert the tagged source to plain speakable text before matching it
+			// against the rendered text nodes.
 			const text = getSpeakableSourceText(sourceMatch.content);
 
 			debugLog('Processing source speak-out match.', {
@@ -50,6 +58,8 @@ export function registerSpeakOutPostProcessor(
 				text,
 				sourceSearchStart,
 			);
+			// Continue searching after this match so repeated text snippets map to
+			// the correct later occurrence in the rendered section.
 			sourceSearchStart = insertion.nextSearchStart;
 			ctx.addChild(
 				new SpeakOutButton(buttonEl, text, speechService, ctx.sourcePath),
@@ -79,6 +89,9 @@ interface TextRange {
 	nextSearchStart: number;
 }
 
+/**
+ * Extracts the inner source content from every <speak-out>...</speak-out> tag.
+ */
 function getSourceSpeakOutMatches(source: string): SourceSpeakOutMatch[] {
 	const matches: SourceSpeakOutMatch[] = [];
 	const tagPattern = /<speak-out(?:\s[^>]*)?>([\s\S]*?)<\/speak-out>/gi;
@@ -93,6 +106,9 @@ function getSourceSpeakOutMatches(source: string): SourceSpeakOutMatch[] {
 	return matches;
 }
 
+/**
+ * Builds the icon-only button that triggers speech for one rendered tag.
+ */
 function createSpeakOutButton(parentEl: HTMLElement): HTMLButtonElement {
 	const buttonEl = parentEl.ownerDocument.createElement('button');
 	buttonEl.type = 'button';
@@ -104,6 +120,10 @@ function createSpeakOutButton(parentEl: HTMLElement): HTMLButtonElement {
 	return buttonEl;
 }
 
+/**
+ * Places the speak button after the matching rendered text, falling back to the
+ * section root when the source text cannot be found in the rendered DOM.
+ */
 function insertButtonAfterSourceText(
 	rootEl: HTMLElement,
 	buttonEl: HTMLButtonElement,
@@ -120,6 +140,8 @@ function insertButtonAfterSourceText(
 		};
 	}
 
+	// Wrap matched text segments first so styling can highlight the content and
+	// the button can be inserted after the final wrapped segment.
 	const contentEls = markRenderedTextRange(rootEl, range);
 	const lastContentEl = contentEls[contentEls.length - 1];
 
@@ -135,6 +157,10 @@ function insertButtonAfterSourceText(
 	};
 }
 
+/**
+ * Finds the start and end text-node positions for a source string within the
+ * concatenated rendered text of a markdown section.
+ */
 function findRenderedTextRange(
 	rootEl: HTMLElement,
 	text: string,
@@ -145,6 +171,8 @@ function findRenderedTextRange(
 	}
 
 	const textPositions = getTextPositions(rootEl);
+	// Flatten text nodes into a single search string while keeping the original
+	// node order so indices can be converted back into DOM positions.
 	const renderedText = textPositions.map((position) => position.node.data).join('');
 	const startIndex = renderedText.indexOf(text, searchStart);
 
@@ -167,6 +195,9 @@ function findRenderedTextRange(
 	};
 }
 
+/**
+ * Applies the shared speak-out content styling and accessibility title.
+ */
 function markSpeakOutContentElement(el: HTMLElement) {
 	el.classList.add(SPEAK_OUT_CONTENT_CLASS);
 
@@ -175,6 +206,10 @@ function markSpeakOutContentElement(el: HTMLElement) {
 	}
 }
 
+/**
+ * Wraps every text-node segment covered by the range and returns the created
+ * content spans in document order.
+ */
 function markRenderedTextRange(
 	rootEl: HTMLElement,
 	range: TextRange,
@@ -189,6 +224,8 @@ function markRenderedTextRange(
 		}
 
 		if (inRange) {
+			// Clamp offsets to the current node: only the first and last nodes may
+			// use partial ranges, while middle nodes are wrapped completely.
 			const startOffset =
 				position.node === range.start.node ? range.start.offset : 0;
 			const endOffset =
@@ -210,6 +247,10 @@ function markRenderedTextRange(
 	return contentEls;
 }
 
+/**
+ * Splits a text node around the requested segment and wraps that segment in a
+ * span that marks it as speak-out content.
+ */
 function wrapTextSegment(
 	node: Text,
 	startOffset: number,
@@ -227,6 +268,8 @@ function wrapTextSegment(
 
 	let selectedNode = node;
 
+	// Split from the end first so the start offset still refers to the original
+	// node coordinates after the trailing text is detached.
 	if (endOffset < selectedNode.data.length) {
 		selectedNode.splitText(endOffset);
 	}
@@ -243,12 +286,20 @@ function wrapTextSegment(
 	return contentEl;
 }
 
+/**
+ * Collects visible text nodes under the rendered section, excluding text that
+ * belongs to speak-out buttons inserted by this post processor.
+ */
 function getTextPositions(rootEl: HTMLElement): TextPosition[] {
 	const textPositions: TextPosition[] = [];
 	const walker = rootEl.ownerDocument.createTreeWalker(
 		rootEl,
 		NodeFilter.SHOW_TEXT,
 		{
+			/**
+			 * Skips non-content nodes so button labels/icons do not affect text
+			 * matching for later speak-out tags.
+			 */
 			acceptNode(node) {
 				if (
 					node.parentElement === null ||
@@ -276,6 +327,10 @@ function getTextPositions(rootEl: HTMLElement): TextPosition[] {
 	return textPositions;
 }
 
+/**
+ * Converts a character index in concatenated rendered text back to a concrete
+ * text node and offset.
+ */
 function getTextPositionAtIndex(
 	textPositions: TextPosition[],
 	index: number,
@@ -298,6 +353,10 @@ function getTextPositionAtIndex(
 	return null;
 }
 
+/**
+ * Inserts an element at a text-node position, splitting the node when the
+ * position falls in the middle of its text.
+ */
 function insertElementAtTextPosition(
 	element: HTMLElement,
 	position: TextPosition,
@@ -317,7 +376,15 @@ function insertElementAtTextPosition(
 	parentEl.insertBefore(element, position.node.nextSibling);
 }
 
+/**
+ * Owns the lifecycle of one speak-out button inside Obsidian's rendered
+ * markdown preview.
+ */
 class SpeakOutButton extends MarkdownRenderChild {
+	/**
+	 * Stores the rendered button, text to speak, speech service, and source path
+	 * for lifecycle logging.
+	 */
 	constructor(
 		private readonly buttonEl: HTMLButtonElement,
 		private readonly text: string,
@@ -327,6 +394,10 @@ class SpeakOutButton extends MarkdownRenderChild {
 		super(buttonEl);
 	}
 
+	/**
+	 * Registers the click handler that speaks the matched text and is cleaned up
+	 * automatically when the markdown child unloads.
+	 */
 	onload() {
 		debugLog('Speak-out button loaded.', {
 			sourcePath: this.sourcePath,
@@ -353,6 +424,9 @@ class SpeakOutButton extends MarkdownRenderChild {
 		});
 	}
 
+	/**
+	 * Logs button cleanup when Obsidian unloads or rerenders this markdown child.
+	 */
 	onunload() {
 		debugLog('Speak-out button unloaded.', {
 			sourcePath: this.sourcePath,
@@ -360,6 +434,10 @@ class SpeakOutButton extends MarkdownRenderChild {
 	}
 }
 
+/**
+ * Converts tagged markdown source into normalized plain text suitable for
+ * speech and for matching against Obsidian's rendered preview text.
+ */
 function getSpeakableSourceText(source: string): string {
 	const withoutHtml = source.replace(/<[^>]+>/g, ' ');
 	const withoutMarkdown = withoutHtml
@@ -370,6 +448,10 @@ function getSpeakableSourceText(source: string): string {
 	return decodeHtmlEntities(withoutMarkdown).replace(/\s+/g, ' ').trim();
 }
 
+/**
+ * Decodes the small set of named and numeric HTML entities expected in markdown
+ * source without pulling in an additional dependency.
+ */
 function decodeHtmlEntities(text: string): string {
 	return text.replace(
 		/&(#x[0-9a-f]+|#\d+|amp|lt|gt|quot|apos|nbsp);/gi,
@@ -404,6 +486,10 @@ function decodeHtmlEntities(text: string): string {
 	);
 }
 
+/**
+ * Safely converts a numeric entity code point, returning the original entity
+ * text when the value is invalid.
+ */
 function decodeCodePoint(codePoint: number, fallback: string): string {
 	if (!Number.isFinite(codePoint)) {
 		return fallback;
