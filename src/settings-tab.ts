@@ -1,6 +1,7 @@
 import {
 	App,
 	DropdownComponent,
+	Notice,
 	Plugin,
 	PluginSettingTab,
 	Setting,
@@ -14,6 +15,7 @@ import {
 } from './settings';
 
 const VOICE_PREVIEW_TEXT = 'This is a preview of the selected voice.';
+const MARKER_SETTING_NOTICE = 'At least one Speak Out marker type must be enabled.';
 
 export class SpeakOutSettingTab extends PluginSettingTab {
 	constructor(
@@ -34,9 +36,47 @@ export class SpeakOutSettingTab extends PluginSettingTab {
 		const { containerEl } = this;
 		containerEl.empty();
 
+		new Setting(containerEl)
+			.setName('Markdown link markers')
+			.setDesc('Add speaker buttons to marker-only links like [text](speak:) or [text](speak-out:). The link behavior is removed in reading view.')
+			.addToggle((toggle) => {
+				toggle
+					.setValue(this.settings.enableLinkMarkers)
+					.onChange(async (value) => {
+						if (
+							!value &&
+							!this.settings.enableDataAttributeMarkers
+						) {
+							new Notice(MARKER_SETTING_NOTICE);
+							this.display();
+							return;
+						}
+
+						this.settings.enableLinkMarkers = value;
+						await this.saveSettings();
+					});
+			});
+
+		new Setting(containerEl)
+			.setName('HTML data attribute markers')
+			.setDesc('Add speaker buttons to HTML elements marked with data-speak-out or data-speak. This keeps the original tag you choose in your note.')
+			.addToggle((toggle) => {
+				toggle
+					.setValue(this.settings.enableDataAttributeMarkers)
+					.onChange(async (value) => {
+						if (!value && !this.settings.enableLinkMarkers) {
+							new Notice(MARKER_SETTING_NOTICE);
+							this.display();
+							return;
+						}
+
+						this.settings.enableDataAttributeMarkers = value;
+						await this.saveSettings();
+					});
+			});
+		
 		const speechEngineId = this.getSelectedSpeechEngineId();
 		const speechEngines = this.speechService.listEngines();
-
 		new Setting(containerEl)
 			.setName('Speech engine')
 			.setDesc('Choose the text-to-speech engine. Only engines supported on this device are shown.')

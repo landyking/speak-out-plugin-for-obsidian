@@ -22,7 +22,7 @@ export default class SpeakOutPlugin extends Plugin {
 				() => this.saveSettings(),
 			),
 		);
-		registerSpeakOutPostProcessor(this, this.speechService);
+		registerSpeakOutPostProcessor(this, this.settings, this.speechService);
 		debugLog('Plugin loaded.');
 	}
 

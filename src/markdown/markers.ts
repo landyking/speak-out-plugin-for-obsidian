@@ -8,6 +8,11 @@ const LINK_MARKER_SELECTOR = [
 const LINK_MARKER_CLASSES = ['external-link', 'internal-link', 'is-unresolved'];
 const LINK_MARKER_TARGETS = new Set(['speak:', 'speak-out:']);
 
+export interface SpeakOutMarkerSettings {
+	enableDataAttributeMarkers: boolean;
+	enableLinkMarkers: boolean;
+}
+
 export abstract class SpeakOutMarker {
 	abstract findMarkedElements(root: HTMLElement): HTMLElement[];
 	abstract updateRenderedHtml(el: HTMLElement): void;
@@ -40,18 +45,36 @@ export class LinkSpeakOutMarker extends SpeakOutMarker {
 	}
 }
 
-export function createDefaultSpeakOutMarkers(): SpeakOutMarker[] {
-	return [
-		new LinkSpeakOutMarker(),
-		new DataAttributeSpeakOutMarker(),
-	];
+export function createEnabledSpeakOutMarkers(
+	settings: SpeakOutMarkerSettings,
+): SpeakOutMarker[] {
+	const markers: SpeakOutMarker[] = [];
+
+	if (settings.enableLinkMarkers) {
+		markers.push(new LinkSpeakOutMarker());
+	}
+
+	if (settings.enableDataAttributeMarkers) {
+		markers.push(new DataAttributeSpeakOutMarker());
+	}
+
+	return markers;
 }
 
-export function getSpeakOutMarkerSelectors(): string[] {
-	return [
-		LINK_MARKER_SELECTOR,
-		DATA_ATTRIBUTE_SELECTOR,
-	];
+export function getSpeakOutMarkerSelectors(
+	settings: SpeakOutMarkerSettings,
+): string[] {
+	const selectors: string[] = [];
+
+	if (settings.enableLinkMarkers) {
+		selectors.push(LINK_MARKER_SELECTOR);
+	}
+
+	if (settings.enableDataAttributeMarkers) {
+		selectors.push(DATA_ATTRIBUTE_SELECTOR);
+	}
+
+	return selectors;
 }
 
 function isSpeakOutLinkMarker(el: HTMLElement) {

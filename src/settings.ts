@@ -1,10 +1,14 @@
 export interface SpeakOutSettings {
+	enableDataAttributeMarkers: boolean;
+	enableLinkMarkers: boolean;
 	speechEngineId: string;
 	voiceEngineId: string;
 	voiceId: string;
 }
 
 export const DEFAULT_SETTINGS: SpeakOutSettings = {
+	enableDataAttributeMarkers: true,
+	enableLinkMarkers: true,
 	speechEngineId: '',
 	voiceEngineId: '',
 	voiceId: '',
@@ -14,10 +18,38 @@ export function normalizeSettings(data: unknown): SpeakOutSettings {
 	const persistedSettings = isSettingsRecord(data) ? data : {};
 
 	return {
+		...normalizeMarkerSettings(persistedSettings),
 		speechEngineId: getStringSetting(persistedSettings.speechEngineId),
 		voiceEngineId: getStringSetting(persistedSettings.voiceEngineId),
 		voiceId: getStringSetting(persistedSettings.voiceId),
 	};
+}
+
+export function normalizeMarkerSettings(
+	settings: Partial<Record<keyof SpeakOutSettings, unknown>>,
+): Pick<SpeakOutSettings, 'enableDataAttributeMarkers' | 'enableLinkMarkers'> {
+	const normalizedSettings = {
+		enableDataAttributeMarkers: getBooleanSetting(
+			settings.enableDataAttributeMarkers,
+			DEFAULT_SETTINGS.enableDataAttributeMarkers,
+		),
+		enableLinkMarkers: getBooleanSetting(
+			settings.enableLinkMarkers,
+			DEFAULT_SETTINGS.enableLinkMarkers,
+		),
+	};
+
+	if (
+		!normalizedSettings.enableDataAttributeMarkers &&
+		!normalizedSettings.enableLinkMarkers
+	) {
+		return {
+			enableDataAttributeMarkers: true,
+			enableLinkMarkers: false,
+		};
+	}
+
+	return normalizedSettings;
 }
 
 export function getVoiceSelectionValue(settings: SpeakOutSettings): string {
@@ -72,4 +104,8 @@ function isSettingsRecord(
 
 function getStringSetting(value: unknown): string {
 	return typeof value === 'string' ? value : '';
+}
+
+function getBooleanSetting(value: unknown, fallback: boolean): boolean {
+	return typeof value === 'boolean' ? value : fallback;
 }

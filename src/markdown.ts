@@ -2,9 +2,10 @@ import { Plugin } from 'obsidian';
 import { debugLog, getTextDebugInfo } from './logger';
 import { SpeakOutButton, createSpeakOutButton } from './markdown/button';
 import {
-	createDefaultSpeakOutMarkers,
+	createEnabledSpeakOutMarkers,
 	getSpeakOutMarkerSelectors,
 } from './markdown/markers';
+import type { SpeakOutSettings } from './settings';
 import { SpeechService } from './speech';
 
 const SPEAK_OUT_CONTENT_CLASS = 'speak-out-content';
@@ -17,15 +18,15 @@ const SPEAK_OUT_CONTENT_TITLE = 'Speak Out content';
  */
 export function registerSpeakOutPostProcessor(
 	plugin: Plugin,
+	settings: SpeakOutSettings,
 	speechService: SpeechService,
 ) {
-	const markers = createDefaultSpeakOutMarkers();
-
 	debugLog('Registering markdown post processor.', {
-		selectors: getSpeakOutMarkerSelectors(),
+		selectors: getSpeakOutMarkerSelectors(settings),
 	});
 
 	plugin.registerMarkdownPostProcessor((el, ctx) => {
+		const markers = createEnabledSpeakOutMarkers(settings);
 		const processedEls = new Set<HTMLElement>();
 		const markedEls = markers.flatMap((marker) => (
 			marker.findMarkedElements(el).map((markedEl) => ({ marker, markedEl }))
@@ -35,6 +36,7 @@ export function registerSpeakOutPostProcessor(
 			docId: ctx.docId,
 			markedElements: markedEls.length,
 			rootTagName: el.tagName,
+			selectors: getSpeakOutMarkerSelectors(settings),
 		});
 
 		for (const { marker, markedEl } of markedEls) {

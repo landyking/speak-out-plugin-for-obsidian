@@ -38,10 +38,14 @@ In reading view, the plugin renders the marked content normally and adds a speak
 
 Speak Out adds a settings tab with:
 
+- **Markdown link markers**: Enable marker-only links such as `[text](speak:)` and `[text](speak-out:)`.
+- **HTML data attribute markers**: Enable HTML elements marked with `data-speak-out` or `data-speak`.
 - **Speech engine**: Choose from the text-to-speech engines supported on the current device.
 - **Voice**: Choose a voice for the selected engine, or use the system default.
 - **Listen**: Preview the selected voice.
 - **Refresh**: Reload the available voice list.
+
+At least one marker type must stay enabled.
 
 Available engines and voices depend on the device, operating system, and Obsidian runtime.
 
