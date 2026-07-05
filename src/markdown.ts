@@ -1,28 +1,35 @@
 import { Plugin } from 'obsidian';
 import { debugLog, getTextDebugInfo } from './logger';
 import { SpeakOutButton, createSpeakOutButton } from './markdown/button';
+import {
+	createDefaultSpeakOutMarkers,
+	getSpeakOutMarkerSelectors,
+} from './markdown/markers';
 import { SpeechService } from './speech';
 
-const SPEAK_OUT_SELECTOR = '[data-speak-out], [data-speak]';
 const SPEAK_OUT_CONTENT_CLASS = 'speak-out-content';
+const SPEAK_OUT_BUTTON_CLASS = 'speak-out-button';
 const SPEAK_OUT_CONTENT_TITLE = 'Speak Out content';
 
 /**
- * Registers the markdown post processor that finds speak-out data attributes
- * in rendered markdown and attaches a speak button to each marked element.
+ * Registers the markdown post processor that finds speak-out markers in
+ * rendered markdown and attaches a speak button to each marked element.
  */
 export function registerSpeakOutPostProcessor(
 	plugin: Plugin,
 	speechService: SpeechService,
 ) {
+	const markers = createDefaultSpeakOutMarkers();
+
 	debugLog('Registering markdown post processor.', {
-		selector: SPEAK_OUT_SELECTOR,
+		selectors: getSpeakOutMarkerSelectors(),
 	});
 
 	plugin.registerMarkdownPostProcessor((el, ctx) => {
-		const markedEls = Array.from(
-			el.querySelectorAll<HTMLElement>(SPEAK_OUT_SELECTOR),
-		);
+		const processedEls = new Set<HTMLElement>();
+		const markedEls = markers.flatMap((marker) => (
+			marker.findMarkedElements(el).map((markedEl) => ({ marker, markedEl }))
+		));
 
 		debugLog('Markdown post processor ran.', {
 			docId: ctx.docId,
@@ -30,11 +37,30 @@ export function registerSpeakOutPostProcessor(
 			rootTagName: el.tagName,
 		});
 
-		for (const markedEl of markedEls) {
+		for (const { marker, markedEl } of markedEls) {
+			if (processedEls.has(markedEl)) {
+				debugLog('Skipping duplicate speak-out marker.', {
+					docId: ctx.docId,
+					tagName: markedEl.tagName,
+				});
+				continue;
+			}
+
+			processedEls.add(markedEl);
+			marker.updateRenderedHtml(markedEl);
+
 			const text = markedEl.textContent?.trim() ?? '';
 
 			if (!text) {
 				debugLog('Skipping empty speak-out marker.', {
+					docId: ctx.docId,
+					tagName: markedEl.tagName,
+				});
+				continue;
+			}
+
+			if (hasAdjacentSpeakOutButton(markedEl)) {
+				debugLog('Skipping speak-out marker with existing button.', {
 					docId: ctx.docId,
 					tagName: markedEl.tagName,
 				});
@@ -59,6 +85,10 @@ export function registerSpeakOutPostProcessor(
 			});
 		}
 	});
+}
+
+function hasAdjacentSpeakOutButton(el: HTMLElement) {
+	return el.nextElementSibling?.classList.contains(SPEAK_OUT_BUTTON_CLASS) ?? false;
 }
 
 function markSpeakOutContentElement(el: HTMLElement) {
