@@ -1,72 +1,81 @@
 # Speak Out
 
-Speak Out lets you mark specific Markdown source content for text-to-speech and adds playback controls in Obsidian reading view.
+Speak Out adds lightweight text-to-speech controls to Obsidian reading view. Mark the parts of a note that should be speakable, switch to reading view, and select the speaker button beside the marked content.
 
-## What it does
+The plugin is designed for local, note-level playback. It does not send note content to a remote service, and it uses the text-to-speech support exposed by Obsidian's browser environment.
 
-- Marks selected Markdown source text with the `data-speak-out` or `data-speak` attribute.
-- Also supports marker-only links that point to `speak:` or `speak-out:`.
-- Renders the tagged content normally in reading view.
-- Adds a speaker control next to each tagged section.
-- Uses the text-to-speech support available in Obsidian's browser environment.
-- Provides plugin settings for speech engine and voice selection.
+## Overview
 
-## Usage
+Speak Out separates authoring from playback:
 
-In source view, add `data-speak-out` to any preserved HTML tag:
+- In source view, you mark the Markdown or HTML content that should be available for speech.
+- In reading view, Speak Out detects those markers and adds an icon-only speaker button beside each marked section.
+- When selected, the button speaks the rendered text using the configured speech engine and voice.
+
+This keeps the note readable as normal Markdown while making selected passages easy to hear on demand.
+
+## Marking speakable text
+
+Speak Out supports two marker styles. Both are enabled by default, and either can be turned off in settings as long as at least one marker type remains enabled.
+
+### HTML data attributes
+
+Use `data-speak-out` on an HTML element when you want explicit, stable markup:
 
 ```html
 <span data-speak-out>This sentence can be spoken from reading view.</span>
 ```
 
-You can choose the tag that best fits the content. The shorter `data-speak` attribute works as an alias:
+The shorter `data-speak` attribute is also supported:
 
 ```html
 <mark data-speak>This highlighted sentence can also be spoken.</mark>
 ```
 
-You can also use marker-only Markdown links:
+You can choose the HTML tag that best matches the content. `span` works well for inline text, `mark` works well for highlighted text, and block elements such as `div` work for longer sections.
+
+### Markdown link markers
+
+Use a marker-only Markdown link when you want quick inline markup:
 
 ```markdown
 [This sentence can be spoken from reading view.](speak:)
 [This sentence can also be spoken.](speak-out:)
 ```
 
-In reading view, the plugin renders the marked content normally and adds a speaker icon immediately after it. Marker-only links have their link behavior removed when the speaker icon is added. Select the icon to speak the tagged source content with the browser-provided text-to-speech engine.
+In reading view, Speak Out removes the link behavior from these markers and treats the link text as speakable content.
+
+## Playback
+
+Speak Out adds a speaker button directly after each marked section in reading view. Selecting the button speaks the text from that section.
+
+Starting a new speech request stops the previous one. If speech synthesis is not available in the current Obsidian environment, Speak Out shows a notice instead of attempting playback.
 
 ## Settings
 
-Speak Out adds a settings tab with:
+Speak Out adds a settings tab with controls for marker handling and speech output:
 
 - **Markdown link markers**: Enable marker-only links such as `[text](speak:)` and `[text](speak-out:)`.
 - **HTML data attribute markers**: Enable HTML elements marked with `data-speak-out` or `data-speak`.
-- **Speech engine**: Choose from the text-to-speech engines supported on the current device.
+- **Speech engine**: Choose from supported text-to-speech engines on the current device.
 - **Voice**: Choose a voice for the selected engine, or use the system default.
 - **Listen**: Preview the selected voice.
 - **Refresh**: Reload the available voice list.
 
-At least one marker type must stay enabled.
-
-Available engines and voices depend on the device, operating system, and Obsidian runtime.
-
-## Markup
-
-The plugin uses data attributes so the tag name remains your choice. For inline text, use a neutral tag such as `<span>`. For highlighted text, use `<mark>`. For block content, use a block tag such as `<div>`.
-
-Marker-only Markdown links are available for quick inline markup. The link destination is only a Speak Out marker and is removed in reading view.
+The available engines and voices depend on Obsidian, the operating system, installed voices, and device settings.
 
 ## Privacy
 
-Speak Out uses the Web Speech API exposed by Obsidian's browser environment. The plugin itself does not make network requests or send note content to a service.
+Speak Out does not make network requests and does not transmit note content. Playback is handled by the selected text-to-speech engine available through Obsidian's browser runtime.
 
-Speech handling is delegated to the selected platform or browser text-to-speech engine. How that engine processes speech may vary by operating system, browser environment, installed voices, and device settings.
+Speech processing behavior may vary by platform. Some operating systems or browser environments may provide local voices, cloud-backed voices, or a mix of both. Review your device's speech and accessibility settings if you need to confirm how a specific voice is handled.
 
 ## Limitations
 
-- Speak Out adds controls in reading view.
-- Text-to-speech availability depends on Obsidian's browser environment.
-- Voice availability varies by device and platform.
-- Mobile behavior may vary depending on platform text-to-speech support.
+- Speak Out adds controls in reading view, not source view.
+- Text-to-speech support depends on Obsidian's browser environment.
+- Voice availability varies by platform and device.
+- Mobile behavior depends on the text-to-speech support available on iOS or Android.
 
 ## Development
 
@@ -94,7 +103,7 @@ Run linting:
 npm run lint
 ```
 
-Obsidian loads the bundled `main.js` at the plugin root. Source code lives in `src/`.
+Source code lives in `src/`. Obsidian loads the bundled `main.js` from the plugin root.
 
 ## License
 
