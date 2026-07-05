@@ -1,3 +1,12 @@
+:is(.markdown-preview-view, .markdown-rendered) .speak-out-content {
+	-webkit-box-decoration-break: clone;
+	background: var(--background-modifier-hover);
+	background: color-mix(in srgb, var(--interactive-accent) 12%, transparent);
+	border-radius: var(--radius-s);
+	box-decoration-break: clone;
+	padding: 0.05em 0.15em;
+}
+
 :is(.markdown-preview-view, .markdown-rendered) .speak-out-button {
 	align-items: center;
 	appearance: none;

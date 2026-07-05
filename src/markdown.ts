@@ -8,6 +8,8 @@ import { debugLog, getTextDebugInfo } from './logger';
 import { SpeechService } from './speech';
 
 export const SPEAK_OUT_TAG = 'speak-out';
+const SPEAK_OUT_CONTENT_CLASS = 'speak-out-content';
+const SPEAK_OUT_CONTENT_TITLE = 'Speak Out content';
 
 export function registerSpeakOutPostProcessor(
 	plugin: Plugin,
@@ -35,7 +37,7 @@ export function registerSpeakOutPostProcessor(
 		});
 
 		for (const speakOutEl of speakOutEls) {
-			if (speakOutEl.classList.contains('speak-out-content')) {
+			if (speakOutEl.classList.contains(SPEAK_OUT_CONTENT_CLASS)) {
 				debugLog('Skipping already processed speak-out element.', {
 					docId: ctx.docId,
 					sourcePath: ctx.sourcePath,
@@ -43,7 +45,7 @@ export function registerSpeakOutPostProcessor(
 				continue;
 			}
 
-			speakOutEl.classList.add('speak-out-content');
+			markSpeakOutContentElement(speakOutEl);
 			const text = getSpeakableText(speakOutEl);
 
 			debugLog('Processing speak-out element.', {
@@ -123,6 +125,7 @@ interface TextPosition {
 }
 
 interface TextRange {
+	start: TextPosition;
 	end: TextPosition;
 	nextSearchStart: number;
 }
@@ -168,7 +171,15 @@ function insertButtonAfterSourceText(
 		};
 	}
 
-	insertElementAtTextPosition(buttonEl, range.end);
+	const contentEls = markRenderedTextRange(rootEl, range);
+	const lastContentEl = contentEls[contentEls.length - 1];
+
+	if (lastContentEl === undefined) {
+		insertElementAtTextPosition(buttonEl, range.end);
+	} else {
+		lastContentEl.insertAdjacentElement('afterend', buttonEl);
+	}
+
 	return {
 		insertedInline: true,
 		nextSearchStart: range.nextSearchStart,
@@ -193,16 +204,94 @@ function findRenderedTextRange(
 	}
 
 	const endIndex = startIndex + text.length;
+	const start = getTextPositionAtIndex(textPositions, startIndex);
 	const end = getTextPositionAtIndex(textPositions, endIndex);
 
-	if (end === null) {
+	if (start === null || end === null) {
 		return null;
 	}
 
 	return {
+		start,
 		end,
 		nextSearchStart: endIndex,
 	};
+}
+
+function markSpeakOutContentElement(el: HTMLElement) {
+	el.classList.add(SPEAK_OUT_CONTENT_CLASS);
+
+	if (!el.hasAttribute('title')) {
+		el.setAttribute('title', SPEAK_OUT_CONTENT_TITLE);
+	}
+}
+
+function markRenderedTextRange(
+	rootEl: HTMLElement,
+	range: TextRange,
+): HTMLElement[] {
+	const textPositions = getTextPositions(rootEl);
+	const contentEls: HTMLElement[] = [];
+	let inRange = false;
+
+	for (const position of textPositions) {
+		if (position.node === range.start.node) {
+			inRange = true;
+		}
+
+		if (inRange) {
+			const startOffset =
+				position.node === range.start.node ? range.start.offset : 0;
+			const endOffset =
+				position.node === range.end.node
+					? range.end.offset
+					: position.node.data.length;
+			const contentEl = wrapTextSegment(position.node, startOffset, endOffset);
+
+			if (contentEl !== null) {
+				contentEls.push(contentEl);
+			}
+		}
+
+		if (position.node === range.end.node) {
+			break;
+		}
+	}
+
+	return contentEls;
+}
+
+function wrapTextSegment(
+	node: Text,
+	startOffset: number,
+	endOffset: number,
+): HTMLElement | null {
+	if (startOffset >= endOffset) {
+		return null;
+	}
+
+	const parentEl = node.parentElement;
+
+	if (parentEl === null) {
+		return null;
+	}
+
+	let selectedNode = node;
+
+	if (endOffset < selectedNode.data.length) {
+		selectedNode.splitText(endOffset);
+	}
+
+	if (startOffset > 0) {
+		selectedNode = selectedNode.splitText(startOffset);
+	}
+
+	const contentEl = node.ownerDocument.createElement('span');
+	markSpeakOutContentElement(contentEl);
+	parentEl.insertBefore(contentEl, selectedNode);
+	contentEl.appendChild(selectedNode);
+
+	return contentEl;
 }
 
 function getTextPositions(rootEl: HTMLElement): TextPosition[] {
