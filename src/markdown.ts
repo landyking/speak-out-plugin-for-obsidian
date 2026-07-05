@@ -57,9 +57,11 @@ export function registerSpeakOutPostProcessor(
 			// Continue searching after this match so repeated text snippets map to
 			// the correct later occurrence in the rendered section.
 			sourceSearchStart = insertion.nextSearchStart;
-			ctx.addChild(
-				new SpeakOutButton(buttonEl, text, speechService),
-			);
+			if (insertion.insertedInline) {
+				ctx.addChild(
+					new SpeakOutButton(buttonEl, text, speechService),
+				);
+			}
 
 			debugLog('Inserted source speak-out button.', {
 				docId: ctx.docId,

@@ -13,8 +13,7 @@ interface TextRange {
 }
 
 /**
- * Places the speak button after the matching rendered text, falling back to the
- * section root when the source text cannot be found in the rendered DOM.
+ * Places the speak button after the matching rendered text.
  */
 export function insertButtonAfterSourceText(
 	rootEl: HTMLElement,
@@ -25,7 +24,6 @@ export function insertButtonAfterSourceText(
 	const range = findRenderedTextRange(rootEl, text, searchStart);
 
 	if (range === null) {
-		rootEl.appendChild(buttonEl);
 		return {
 			insertedInline: false,
 			nextSearchStart: searchStart,
