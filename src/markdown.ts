@@ -20,56 +20,17 @@ export function registerSpeakOutPostProcessor(
 	});
 
 	plugin.registerMarkdownPostProcessor((el, ctx) => {
-		const speakOutEls = getSpeakOutElements(el);
 		const sectionInfo = ctx.getSectionInfo(el);
 		const sourceMatches =
-			speakOutEls.length === 0 && sectionInfo !== null
-				? getSourceSpeakOutMatches(sectionInfo.text)
-				: [];
+			sectionInfo === null ? [] : getSourceSpeakOutMatches(sectionInfo.text);
 
 		debugLog('Markdown post processor ran.', {
 			docId: ctx.docId,
 			sourcePath: ctx.sourcePath,
-			matches: speakOutEls.length,
 			sourceMatches: sourceMatches.length,
 			hasSectionInfo: sectionInfo !== null,
 			rootTagName: el.tagName,
 		});
-
-		for (const speakOutEl of speakOutEls) {
-			if (speakOutEl.classList.contains(SPEAK_OUT_CONTENT_CLASS)) {
-				debugLog('Skipping already processed speak-out element.', {
-					docId: ctx.docId,
-					sourcePath: ctx.sourcePath,
-				});
-				continue;
-			}
-
-			markSpeakOutContentElement(speakOutEl);
-			const text = getSpeakableText(speakOutEl);
-
-			debugLog('Processing speak-out element.', {
-				docId: ctx.docId,
-				sourcePath: ctx.sourcePath,
-				...getTextDebugInfo(text),
-			});
-
-			const buttonEl = createSpeakOutButton(speakOutEl);
-			speakOutEl.insertAdjacentElement('afterend', buttonEl);
-			ctx.addChild(
-				new SpeakOutButton(
-					buttonEl,
-					speakOutEl,
-					speechService,
-					ctx.sourcePath,
-				),
-			);
-
-			debugLog('Inserted speak-out button.', {
-				docId: ctx.docId,
-				sourcePath: ctx.sourcePath,
-			});
-		}
 
 		let sourceSearchStart = 0;
 
@@ -91,7 +52,7 @@ export function registerSpeakOutPostProcessor(
 			);
 			sourceSearchStart = insertion.nextSearchStart;
 			ctx.addChild(
-				new SourceSpeakOutButton(buttonEl, text, speechService, ctx.sourcePath),
+				new SpeakOutButton(buttonEl, text, speechService, ctx.sourcePath),
 			);
 
 			debugLog('Inserted source speak-out button.', {
@@ -101,18 +62,6 @@ export function registerSpeakOutPostProcessor(
 			});
 		}
 	});
-}
-
-function getSpeakOutElements(el: HTMLElement): HTMLElement[] {
-	const elements = Array.from(
-		el.querySelectorAll<HTMLElement>(SPEAK_OUT_TAG),
-	);
-
-	if (el.matches(SPEAK_OUT_TAG)) {
-		elements.unshift(el);
-	}
-
-	return elements;
 }
 
 interface SourceSpeakOutMatch {
@@ -371,7 +320,7 @@ function insertElementAtTextPosition(
 class SpeakOutButton extends MarkdownRenderChild {
 	constructor(
 		private readonly buttonEl: HTMLButtonElement,
-		private readonly speakOutEl: HTMLElement,
+		private readonly text: string,
 		private readonly speechService: SpeechService,
 		private readonly sourcePath: string,
 	) {
@@ -387,62 +336,13 @@ class SpeakOutButton extends MarkdownRenderChild {
 			event.preventDefault();
 			event.stopPropagation();
 
-			const text = getSpeakableText(this.speakOutEl);
-
 			debugLog('Speak-out button clicked.', {
-				sourcePath: this.sourcePath,
-				...getTextDebugInfo(text),
-			});
-
-			if (!text) {
-				debugLog('Speak-out click ignored because text is empty.', {
-					sourcePath: this.sourcePath,
-				});
-				new Notice('No text to speak.');
-				return;
-			}
-
-			this.speechService.speak(text);
-		});
-	}
-
-	onunload() {
-		debugLog('Speak-out button unloaded.', {
-			sourcePath: this.sourcePath,
-		});
-	}
-}
-
-function getSpeakableText(el: HTMLElement): string {
-	return (el.textContent ?? '').replace(/\s+/g, ' ').trim();
-}
-
-class SourceSpeakOutButton extends MarkdownRenderChild {
-	constructor(
-		private readonly buttonEl: HTMLButtonElement,
-		private readonly text: string,
-		private readonly speechService: SpeechService,
-		private readonly sourcePath: string,
-	) {
-		super(buttonEl);
-	}
-
-	onload() {
-		debugLog('Source speak-out button loaded.', {
-			sourcePath: this.sourcePath,
-		});
-
-		this.registerDomEvent(this.buttonEl, 'click', (event) => {
-			event.preventDefault();
-			event.stopPropagation();
-
-			debugLog('Source speak-out button clicked.', {
 				sourcePath: this.sourcePath,
 				...getTextDebugInfo(this.text),
 			});
 
 			if (!this.text) {
-				debugLog('Source speak-out click ignored because text is empty.', {
+				debugLog('Speak-out click ignored because text is empty.', {
 					sourcePath: this.sourcePath,
 				});
 				new Notice('No text to speak.');
@@ -454,7 +354,7 @@ class SourceSpeakOutButton extends MarkdownRenderChild {
 	}
 
 	onunload() {
-		debugLog('Source speak-out button unloaded.', {
+		debugLog('Speak-out button unloaded.', {
 			sourcePath: this.sourcePath,
 		});
 	}
