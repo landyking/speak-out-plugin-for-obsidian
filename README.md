@@ -4,7 +4,7 @@ Speak Out lets you mark specific Markdown source content for text-to-speech and 
 
 ## What it does
 
-- Marks selected Markdown source text with the `<speak-out>` tag.
+- Marks selected Markdown source text with the `data-speak-out` or `data-speak` attribute.
 - Renders the tagged content normally in reading view.
 - Adds a speaker control next to each tagged section.
 - Uses the text-to-speech support available in Obsidian's browser environment.
@@ -12,10 +12,16 @@ Speak Out lets you mark specific Markdown source content for text-to-speech and 
 
 ## Usage
 
-In source view, wrap text with the canonical speak-out tag:
+In source view, add `data-speak-out` to any preserved HTML tag:
 
 ```html
-<speak-out>This sentence can be spoken from reading view.</speak-out>
+<span data-speak-out>This sentence can be spoken from reading view.</span>
+```
+
+You can choose the tag that best fits the content. The shorter `data-speak` attribute works as an alias:
+
+```html
+<mark data-speak>This highlighted sentence can also be spoken.</mark>
 ```
 
 In reading view, the plugin renders the wrapped content normally and adds a speaker icon immediately after it. Select the icon to speak the tagged source content with the browser-provided text-to-speech engine.
@@ -31,9 +37,9 @@ Speak Out adds a settings tab with:
 
 Available engines and voices depend on the device, operating system, and Obsidian runtime.
 
-## Tag naming
+## Markup
 
-The plugin uses `<speak-out>` because lowercase, hyphenated names follow HTML custom element naming conventions and remain easy to read in Markdown source.
+The plugin uses data attributes so the tag name remains your choice. For inline text, use a neutral tag such as `<span>`. For highlighted text, use `<mark>`. For block content, use a block tag such as `<div>`.
 
 ## Privacy
 

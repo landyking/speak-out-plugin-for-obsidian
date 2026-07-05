@@ -1,72 +1,70 @@
 import { Plugin } from 'obsidian';
 import { debugLog, getTextDebugInfo } from './logger';
 import { SpeakOutButton, createSpeakOutButton } from './markdown/button';
-import { insertButtonAfterSourceText } from './markdown/rendered-range';
-import {
-	SPEAK_OUT_TAG,
-	getSourceSpeakOutMatches,
-} from './markdown/source-tags';
-import { getSpeakableSourceText } from './markdown/speakable-text';
 import { SpeechService } from './speech';
 
+const SPEAK_OUT_SELECTOR = '[data-speak-out], [data-speak]';
+const SPEAK_OUT_CONTENT_CLASS = 'speak-out-content';
+const SPEAK_OUT_CONTENT_TITLE = 'Speak Out content';
+
 /**
- * Registers the markdown post processor that finds <speak-out> source blocks,
- * locates their rendered text, and attaches a speak button to each match.
+ * Registers the markdown post processor that finds speak-out data attributes
+ * in rendered markdown and attaches a speak button to each marked element.
  */
 export function registerSpeakOutPostProcessor(
 	plugin: Plugin,
 	speechService: SpeechService,
 ) {
 	debugLog('Registering markdown post processor.', {
-		tag: SPEAK_OUT_TAG,
+		selector: SPEAK_OUT_SELECTOR,
 	});
 
 	plugin.registerMarkdownPostProcessor((el, ctx) => {
-		// Obsidian gives the rendered DOM here, so use section source text to find
-		// custom tags that have already been stripped from the preview DOM.
-		const sectionInfo = ctx.getSectionInfo(el);
-		const sourceMatches =
-			sectionInfo === null ? [] : getSourceSpeakOutMatches(sectionInfo.text);
+		const markedEls = Array.from(
+			el.querySelectorAll<HTMLElement>(SPEAK_OUT_SELECTOR),
+		);
 
-			debugLog('Markdown post processor ran.', {
-				docId: ctx.docId,
-				sourceMatches: sourceMatches.length,
-				hasSectionInfo: sectionInfo !== null,
-				rootTagName: el.tagName,
+		debugLog('Markdown post processor ran.', {
+			docId: ctx.docId,
+			markedElements: markedEls.length,
+			rootTagName: el.tagName,
 		});
 
-		let sourceSearchStart = 0;
+		for (const markedEl of markedEls) {
+			const text = markedEl.textContent?.trim() ?? '';
 
-		for (const sourceMatch of sourceMatches) {
-			// Convert the tagged source to plain speakable text before matching it
-			// against the rendered text nodes.
-			const text = getSpeakableSourceText(sourceMatch.content);
+			if (!text) {
+				debugLog('Skipping empty speak-out marker.', {
+					docId: ctx.docId,
+					tagName: markedEl.tagName,
+				});
+				continue;
+			}
 
-			debugLog('Processing source speak-out match.', {
+			debugLog('Processing speak-out marker.', {
 				docId: ctx.docId,
+				tagName: markedEl.tagName,
 				...getTextDebugInfo(text),
 			});
 
 			const buttonEl = createSpeakOutButton(el);
-			const insertion = insertButtonAfterSourceText(
-				el,
-				buttonEl,
-				text,
-				sourceSearchStart,
-			);
-			// Continue searching after this match so repeated text snippets map to
-			// the correct later occurrence in the rendered section.
-			sourceSearchStart = insertion.nextSearchStart;
-			if (insertion.insertedInline) {
-				ctx.addChild(
-					new SpeakOutButton(buttonEl, text, speechService),
-				);
-			}
 
-			debugLog('Inserted source speak-out button.', {
+			markSpeakOutContentElement(markedEl);
+			markedEl.insertAdjacentElement('afterend', buttonEl);
+			ctx.addChild(new SpeakOutButton(buttonEl, text, speechService));
+
+			debugLog('Inserted speak-out button.', {
 				docId: ctx.docId,
-				insertedInline: insertion.insertedInline,
+				tagName: markedEl.tagName,
 			});
 		}
 	});
+}
+
+function markSpeakOutContentElement(el: HTMLElement) {
+	el.classList.add(SPEAK_OUT_CONTENT_CLASS);
+
+	if (!el.hasAttribute('title')) {
+		el.setAttribute('title', SPEAK_OUT_CONTENT_TITLE);
+	}
 }
