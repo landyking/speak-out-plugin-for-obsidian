@@ -1,101 +1,107 @@
 import { Notice } from 'obsidian';
+import {
+	createSpeechEngine,
+	getSupportedSpeechEngineOptions,
+	resolveSpeechEngineId,
+	type SpeechEngine,
+	type SpeechEngineOption,
+	type SpeechVoiceOption,
+} from './speech-engine';
 import { debugLog, getTextDebugInfo } from './logger';
+import type { SpeakOutSettings } from './settings';
+
+type SpeechVoiceSelection = Pick<SpeakOutSettings, 'voiceEngineId' | 'voiceId'>;
 
 export class SpeechService {
-	private currentUtterance: SpeechSynthesisUtterance | null = null;
+	private speechEngine: SpeechEngine;
+	private speechRequestId = 0;
+
+	constructor(
+		private readonly settings: SpeakOutSettings,
+		speechEngine: SpeechEngine = createSpeechEngine(settings.speechEngineId),
+	) {
+		this.speechEngine = speechEngine;
+	}
 
 	speak(text: string) {
+		this.speakWithVoice(text, {
+			voiceEngineId: this.settings.voiceEngineId,
+			voiceId: this.settings.voiceId,
+		});
+	}
+
+	previewVoice(text: string, voiceSelection: SpeechVoiceSelection) {
+		this.speakWithVoice(text, voiceSelection);
+	}
+
+	private speakWithVoice(text: string, voiceSelection: SpeechVoiceSelection) {
 		debugLog('Speech requested.', getTextDebugInfo(text));
 
-		if (!this.isSpeechSynthesisAvailable()) {
-			debugLog('Speech request failed: speech synthesis is unavailable.');
+		const speechEngine = this.getSpeechEngine();
+		if (!speechEngine.isAvailable()) {
+			debugLog('Speech request failed: no speech engine is available.');
 			new Notice('Text-to-speech is not available in this environment.');
 			return;
 		}
 
-		this.stop();
+		const requestId = ++this.speechRequestId;
 
-		const utterance = new SpeechSynthesisUtterance(text);
-		this.currentUtterance = utterance;
+		speechEngine.speak(
+			text,
+			{
+				voiceEngineId: voiceSelection.voiceEngineId,
+				voiceId: voiceSelection.voiceId,
+			},
+			{
+				onEnd: () => {
+					if (!this.isCurrentRequest(requestId)) {
+						return;
+					}
 
-		debugLog('Speech utterance created.', {
-			...getTextDebugInfo(text),
-			lang: utterance.lang,
-			pitch: utterance.pitch,
-			rate: utterance.rate,
-			voice: utterance.voice?.name ?? null,
-			voicesAvailable: window.speechSynthesis.getVoices().length,
-			volume: utterance.volume,
-		});
+					debugLog('Speech request completed.');
+				},
+				onError: () => {
+					if (!this.isCurrentRequest(requestId)) {
+						return;
+					}
 
-		utterance.onstart = (event) => {
-			debugLog('Speech started.', getSpeechEventDebugInfo(event));
-		};
+					new Notice('Unable to speak this text.');
+				},
+			},
+		);
+	}
 
-		utterance.onend = () => {
-			debugLog('Speech ended.');
-			if (this.currentUtterance === utterance) {
-				this.currentUtterance = null;
-			}
-		};
+	listVoices(): Promise<SpeechVoiceOption[]> {
+		return this.getSpeechEngine().listVoices();
+	}
 
-		utterance.onerror = (event) => {
-			debugLog('Speech error.', {
-				...getSpeechEventDebugInfo(event),
-				error: event.error,
-			});
-			if (this.currentUtterance === utterance) {
-				this.currentUtterance = null;
-			}
-			new Notice('Unable to speak this text.');
-		};
-
-		utterance.onpause = (event) => {
-			debugLog('Speech paused.', getSpeechEventDebugInfo(event));
-		};
-
-		utterance.onresume = (event) => {
-			debugLog('Speech resumed.', getSpeechEventDebugInfo(event));
-		};
-
-		debugLog('Submitting utterance to speech synthesis.', {
-			pending: window.speechSynthesis.pending,
-			paused: window.speechSynthesis.paused,
-			speaking: window.speechSynthesis.speaking,
-		});
-		window.speechSynthesis.speak(utterance);
+	listEngines(): SpeechEngineOption[] {
+		return getSupportedSpeechEngineOptions();
 	}
 
 	stop() {
-		if (!this.isSpeechSynthesisAvailable()) {
-			debugLog('Stop ignored: speech synthesis is unavailable.');
-			return;
+		this.speechRequestId++;
+		this.speechEngine.stop();
+	}
+
+	dispose() {
+		this.speechRequestId++;
+		this.speechEngine.dispose();
+	}
+
+	private isCurrentRequest(requestId: number): boolean {
+		return this.speechRequestId === requestId;
+	}
+
+	private getSpeechEngine(): SpeechEngine {
+		const engineId = resolveSpeechEngineId(this.settings.speechEngineId);
+		if (this.speechEngine.id === engineId) {
+			return this.speechEngine;
 		}
 
-		debugLog('Stopping speech synthesis.', {
-			hadCurrentUtterance: this.currentUtterance !== null,
-			pending: window.speechSynthesis.pending,
-			paused: window.speechSynthesis.paused,
-			speaking: window.speechSynthesis.speaking,
-		});
-		window.speechSynthesis.cancel();
-		this.currentUtterance = null;
+		this.speechRequestId++;
+		this.speechEngine.dispose();
+		this.speechEngine = createSpeechEngine(engineId);
+		return this.speechEngine;
 	}
-
-	private isSpeechSynthesisAvailable(): boolean {
-		return (
-			'speechSynthesis' in window &&
-			typeof SpeechSynthesisUtterance !== 'undefined'
-		);
-	}
-}
-
-function getSpeechEventDebugInfo(
-	event: SpeechSynthesisEvent,
-): Record<string, unknown> {
-	return {
-		charIndex: event.charIndex,
-		elapsedTime: event.elapsedTime,
-		name: event.name,
-	};
 }

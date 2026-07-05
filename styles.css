@@ -39,3 +39,41 @@
 	box-shadow: 0 0 0 2px var(--background-modifier-border-focus);
 	outline: none;
 }
+
+.speak-out-setting-voice {
+	align-items: stretch;
+	flex-direction: column;
+	gap: var(--size-4-2);
+}
+
+.speak-out-setting-voice .setting-item-info {
+	margin-inline-end: 0;
+	width: 100%;
+}
+
+.speak-out-setting-voice .setting-item-control {
+	display: flex;
+	flex-wrap: nowrap;
+	gap: var(--size-4-2);
+	justify-content: flex-start;
+	width: 100%;
+}
+
+.speak-out-setting-voice .setting-item-control select {
+	flex: 1 1 24rem;
+	min-width: 12rem;
+}
+
+.speak-out-setting-voice .setting-item-control button {
+	flex: 0 0 auto;
+}
+
+@media (max-width: 640px) {
+	.speak-out-setting-voice .setting-item-control {
+		flex-wrap: wrap;
+	}
+
+	.speak-out-setting-voice .setting-item-control select {
+		flex-basis: 100%;
+	}
+}
