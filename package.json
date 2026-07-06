@@ -1,6 +1,6 @@
 {
 	"name": "speakout",
-	"version": "1.0.1",
+	"version": "1.0.2",
 	"description": "Obsidian plugin for speaking Markdown source content tagged for reading view.",
 	"main": "main.js",
 	"type": "module",
