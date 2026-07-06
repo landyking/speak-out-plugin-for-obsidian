@@ -1,7 +1,7 @@
 {
 	"id": "speakout",
 	"name": "Speak Out",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"minAppVersion": "1.0.0",
 	"description": "Adds reading-view text-to-speech controls for content tagged in Markdown source.",
 	"author": "Landy",
