@@ -64,6 +64,14 @@ Speak Out adds a settings tab with controls for marker handling and speech outpu
 
 The available engines and voices depend on Obsidian, the operating system, installed voices, and device settings.
 
+## Preview
+
+**Source Code and Reading View**
+![Source Markdown on the left and Speak Out reading view controls on the right](images/source_and_reading.png)
+
+**Settings**
+![Speak Out settings tab](images/setting.png)
+
 ## Privacy
 
 Speak Out does not make network requests and does not transmit note content. Playback is handled by the selected text-to-speech engine available through Obsidian's browser runtime.
