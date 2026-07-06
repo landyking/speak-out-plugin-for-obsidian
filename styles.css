@@ -1,8 +1,6 @@
 :is(.markdown-preview-view, .markdown-rendered) .speak-out-content {
-	-webkit-box-decoration-break: clone;
 	background: var(--background-modifier-hover);
 	border-radius: var(--radius-s);
-	box-decoration-break: clone;
 	padding: 0.05em 0.15em;
 }
 
