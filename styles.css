@@ -1,10 +1,15 @@
 :is(.markdown-preview-view, .markdown-rendered) .speak-out-content {
 	-webkit-box-decoration-break: clone;
 	background: var(--background-modifier-hover);
-	background: color-mix(in srgb, var(--interactive-accent) 12%, transparent);
 	border-radius: var(--radius-s);
 	box-decoration-break: clone;
 	padding: 0.05em 0.15em;
+}
+
+@supports (background: color-mix(in srgb, black 50%, transparent)) {
+	:is(.markdown-preview-view, .markdown-rendered) .speak-out-content {
+		background: color-mix(in srgb, var(--interactive-accent) 12%, transparent);
+	}
 }
 
 :is(.markdown-preview-view, .markdown-rendered) a.speak-out-content {
