@@ -17,6 +17,25 @@ import {
 const VOICE_PREVIEW_TEXT = 'This is a preview of the selected voice.';
 const MARKER_SETTING_NOTICE = 'At least one Speak Out marker type must be enabled.';
 
+const DEFAULT_LANGUAGE_OPTIONS: Record<string, string> = {
+	'': 'System default',
+	'en-US': 'English (US)',
+	'en-GB': 'English (UK)',
+	'zh-CN': 'Chinese (simplified)',
+	'zh-TW': 'Chinese (traditional)',
+	'zh-HK': 'Chinese (Hong Kong)',
+	'ja-JP': 'Japanese',
+	'ko-KR': 'Korean',
+	'fr-FR': 'French',
+	'de-DE': 'German',
+	'es-ES': 'Spanish',
+	'it-IT': 'Italian',
+	'pt-BR': 'Portuguese (Brazil)',
+	'ru-RU': 'Russian',
+	'ar-SA': 'Arabic',
+	'hi-IN': 'Hindi',
+};
+
 interface SpeakOutSettingDefinition {
 	name: string;
 	desc: string;
@@ -70,6 +89,11 @@ export class SpeakOutSettingTab extends PluginSettingTab {
 				render: (setting) => {
 					this.renderVoiceSetting(setting, speechEngineId);
 				},
+			},
+			{
+				name: 'Default language',
+				desc: 'Choose the language used when voice is set to system default.',
+				render: (setting) => this.renderDefaultLanguageSetting(setting),
 			},
 		];
 	}
@@ -159,6 +183,28 @@ export class SpeakOutSettingTab extends PluginSettingTab {
 				await this.saveSettings();
 				this.refreshSettings();
 			});
+		});
+	}
+
+	private renderDefaultLanguageSetting(setting: Setting) {
+		setting.addDropdown((dropdown) => {
+			for (const [value, label] of Object.entries(DEFAULT_LANGUAGE_OPTIONS)) {
+				dropdown.addOption(value, label);
+			}
+
+			if (!(this.settings.defaultLanguage in DEFAULT_LANGUAGE_OPTIONS)) {
+				dropdown.addOption(
+					this.settings.defaultLanguage,
+					`Custom (${this.settings.defaultLanguage})`,
+				);
+			}
+
+			dropdown
+				.setValue(this.settings.defaultLanguage)
+				.onChange(async (value) => {
+					this.settings.defaultLanguage = value;
+					await this.saveSettings();
+				});
 		});
 	}
 

@@ -2,6 +2,7 @@ export interface SpeakOutSettings {
 	enableDataAttributeMarkers: boolean;
 	enableLinkMarkers: boolean;
 	speechEngineId: string;
+	defaultLanguage: string;
 	voiceEngineId: string;
 	voiceId: string;
 }
@@ -10,6 +11,7 @@ export const DEFAULT_SETTINGS: SpeakOutSettings = {
 	enableDataAttributeMarkers: true,
 	enableLinkMarkers: true,
 	speechEngineId: '',
+	defaultLanguage: '',
 	voiceEngineId: '',
 	voiceId: '',
 };
@@ -20,6 +22,7 @@ export function normalizeSettings(data: unknown): SpeakOutSettings {
 	return {
 		...normalizeMarkerSettings(persistedSettings),
 		speechEngineId: getStringSetting(persistedSettings.speechEngineId),
+		defaultLanguage: getStringSetting(persistedSettings.defaultLanguage).trim(),
 		voiceEngineId: getStringSetting(persistedSettings.voiceEngineId),
 		voiceId: getStringSetting(persistedSettings.voiceId),
 	};

@@ -49,6 +49,7 @@ export class SpeechService {
 		speechEngine.speak(
 			text,
 			{
+				defaultLanguage: this.settings.defaultLanguage,
 				voiceEngineId: voiceSelection.voiceEngineId,
 				voiceId: voiceSelection.voiceId,
 			},

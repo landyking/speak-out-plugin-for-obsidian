@@ -10,6 +10,7 @@ export interface SpeechEngineCallbacks {
 }
 
 export interface SpeechEngineSpeakOptions {
+	defaultLanguage: string;
 	voiceEngineId: string;
 	voiceId: string;
 }
