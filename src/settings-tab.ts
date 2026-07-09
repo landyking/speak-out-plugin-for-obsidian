@@ -64,7 +64,7 @@ export class SpeakOutSettingTab extends PluginSettingTab {
 		return [
 			{
 				name: 'Markdown link markers',
-				desc: 'Add speaker buttons to marker-only links like [text](speak:) or [text](speak-out:). The link behavior is removed in reading view.',
+				desc: 'Add speaker buttons to marker-only links like [text](speak:) or [text](speak:fr-FR). The link behavior is removed in reading view.',
 				render: (setting) => this.renderLinkMarkersSetting(setting),
 			},
 			{

@@ -49,9 +49,10 @@ Use a marker-only Markdown link when you want quick inline markup:
 ```markdown
 [This sentence can be spoken from reading view.](speak:)
 [This sentence can also be spoken.](speak-out:)
+[Bonjour tout le monde.](speak:fr-FR)
 ```
 
-In reading view, Speak Out removes the link behavior from these markers and treats the link text as speakable content.
+Add a language after `speak:` or `speak-out:` when the link text should use a specific language with the system default voice. In reading view, Speak Out removes the link behavior from these markers and treats the link text as speakable content.
 
 ## Playback
 
@@ -63,7 +64,7 @@ Starting a new speech request stops the previous one. If speech synthesis is not
 
 Speak Out adds a settings tab with controls for marker handling and speech output:
 
-- **Markdown link markers**: Enable marker-only links such as `[text](speak:)` and `[text](speak-out:)`.
+- **Markdown link markers**: Enable marker-only links such as `[text](speak:)`, `[text](speak-out:)`, and `[text](speak:fr-FR)`.
 - **HTML data attribute markers**: Enable HTML elements marked with `data-speak-out` or `data-speak`.
 - **Speech engine**: Choose from supported text-to-speech engines on the current device.
 - **Default language**: Choose the language used when **Voice** is set to **System default** and marked content has no `lang` attribute, or choose **System default** to let the system decide.

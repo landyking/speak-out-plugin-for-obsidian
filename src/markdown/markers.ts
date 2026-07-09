@@ -1,12 +1,12 @@
 const DATA_ATTRIBUTE_SELECTOR = '[data-speak-out], [data-speak]';
 const LINK_MARKER_SELECTOR = [
-	'a[href="speak:"]',
-	'a[href="speak-out:"]',
-	'a[data-href="speak:"]',
-	'a[data-href="speak-out:"]',
+	'a[href^="speak:"]',
+	'a[href^="speak-out:"]',
+	'a[data-href^="speak:"]',
+	'a[data-href^="speak-out:"]',
 ].join(', ');
 const LINK_MARKER_CLASSES = ['external-link', 'internal-link', 'is-unresolved'];
-const LINK_MARKER_TARGETS = new Set(['speak:', 'speak-out:']);
+const LINK_MARKER_TARGET_PREFIXES = ['speak:', 'speak-out:'];
 
 export interface SpeakOutMarkerSettings {
 	enableDataAttributeMarkers: boolean;
@@ -35,7 +35,12 @@ export class LinkSpeakOutMarker extends SpeakOutMarker {
 	}
 
 	updateRenderedHtml(el: HTMLElement) {
+		const marker = getSpeakOutLinkMarker(el);
+
 		el.setAttribute('data-speak-out', '');
+		if (marker?.language) {
+			el.setAttribute('lang', marker.language);
+		}
 		el.removeAttribute('href');
 		el.removeAttribute('data-href');
 		el.removeAttribute('target');
@@ -78,6 +83,26 @@ export function getSpeakOutMarkerSelectors(
 }
 
 function isSpeakOutLinkMarker(el: HTMLElement) {
-	return LINK_MARKER_TARGETS.has(el.getAttribute('href') ?? '')
-		|| LINK_MARKER_TARGETS.has(el.getAttribute('data-href') ?? '');
+	return getSpeakOutLinkMarker(el) !== null;
+}
+
+function getSpeakOutLinkMarker(el: HTMLElement): { language: string } | null {
+	return parseSpeakOutLinkTarget(el.getAttribute('href'))
+		?? parseSpeakOutLinkTarget(el.getAttribute('data-href'));
+}
+
+function parseSpeakOutLinkTarget(target: string | null): { language: string } | null {
+	if (target === null) {
+		return null;
+	}
+
+	for (const prefix of LINK_MARKER_TARGET_PREFIXES) {
+		if (target.startsWith(prefix)) {
+			return {
+				language: target.slice(prefix.length).trim(),
+			};
+		}
+	}
+
+	return null;
 }
