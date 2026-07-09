@@ -7,6 +7,7 @@ import {
 	Setting,
 } from 'obsidian';
 import { SpeechService } from './speech';
+import type { SpeechVoiceOption } from './speech-engine';
 import {
 	getVoiceOptionValue,
 	getVoiceSelectionValue,
@@ -256,14 +257,18 @@ export class SpeakOutSettingTab extends PluginSettingTab {
 		dropdown.selectEl.empty();
 		dropdown.addOption('', 'System default');
 
-		for (const voice of voices) {
-			const label = formatVoiceLabel(
-				voice.name,
-				voice.lang,
-				voice.engineLabel,
-				voice.description,
-			);
-			dropdown.addOption(getVoiceOptionValue(voice.engineId, voice.id), label);
+		for (const [language, languageVoices] of groupVoicesByLanguage(voices)) {
+			const groupEl = createEl('optgroup');
+			groupEl.label = formatLanguageLabel(language);
+
+			for (const voice of sortVoicesByName(languageVoices)) {
+				const optionEl = createEl('option');
+				optionEl.value = getVoiceOptionValue(voice.engineId, voice.id);
+				optionEl.text = formatVoiceLabel(voice);
+				groupEl.appendChild(optionEl);
+			}
+
+			dropdown.selectEl.appendChild(groupEl);
 		}
 
 		if (
@@ -304,19 +309,65 @@ export class SpeakOutSettingTab extends PluginSettingTab {
 	}
 }
 
-function formatVoiceLabel(
-	name: string,
-	lang: string,
-	engineLabel: string,
-	description: string,
-): string {
-	const details = [lang, engineLabel, description]
+function groupVoicesByLanguage(
+	voices: SpeechVoiceOption[],
+): Map<string, SpeechVoiceOption[]> {
+	const groups = new Map<string, SpeechVoiceOption[]>();
+
+	for (const voice of voices) {
+		const language = voice.lang.trim() || 'Unknown language';
+		const languageVoices = groups.get(language);
+
+		if (languageVoices) {
+			languageVoices.push(voice);
+		} else {
+			groups.set(language, [voice]);
+		}
+	}
+
+	return new Map(
+		Array.from(groups.entries()).sort(([languageA], [languageB]) => {
+			return compareLabels(
+				formatLanguageLabel(languageA),
+				formatLanguageLabel(languageB),
+			);
+		}),
+	);
+}
+
+function sortVoicesByName(voices: SpeechVoiceOption[]): SpeechVoiceOption[] {
+	return [...voices].sort((voiceA, voiceB) => {
+		return (
+			compareLabels(voiceA.name, voiceB.name) ||
+			compareLabels(voiceA.id, voiceB.id)
+		);
+	});
+}
+
+function formatLanguageLabel(language: string): string {
+	return DEFAULT_LANGUAGE_OPTIONS[language] ?? language;
+}
+
+function formatVoiceLabel(voice: SpeechVoiceOption): string {
+	const details = [voice.engineLabel, getGroupedVoiceDescription(voice)]
 		.map((detail) => detail.trim())
 		.filter(Boolean);
 
 	if (details.length === 0) {
-		return name;
+		return voice.name;
 	}
 
-	return `${name} (${details.join(', ')})`;
+	return `${voice.name} (${details.join(', ')})`;
+}
+
+function getGroupedVoiceDescription(voice: SpeechVoiceOption): string {
+	return voice.description
+		.split(',')
+		.map((detail) => detail.trim())
+		.filter((detail) => detail && detail !== voice.lang)
+		.join(', ');
+}
+
+function compareLabels(labelA: string, labelB: string): number {
+	return labelA.localeCompare(labelB, undefined, { sensitivity: 'base' });
 }
