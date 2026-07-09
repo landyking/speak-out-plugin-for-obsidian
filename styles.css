@@ -43,6 +43,16 @@
 	width: 1.4em;
 }
 
+:is(.markdown-preview-view, .markdown-rendered) .speak-out-button svg {
+	color: inherit;
+	display: block;
+	flex: 0 0 auto;
+	height: 1em;
+	opacity: 1;
+	stroke: currentColor;
+	width: 1em;
+}
+
 :is(.markdown-preview-view, .markdown-rendered) .speak-out-button:hover,
 :is(.markdown-preview-view, .markdown-rendered) .speak-out-button:focus-visible {
 	background: var(--background-modifier-hover);
