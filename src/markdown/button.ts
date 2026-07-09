@@ -4,7 +4,7 @@ import {
 	setIcon,
 } from 'obsidian';
 import { debugLog, getTextDebugInfo } from '../logger';
-import { SpeechService } from '../speech';
+import { SpeechService, type SpeechRequest } from '../speech';
 
 /**
  * Builds the icon-only button that triggers speech for one rendered tag.
@@ -27,7 +27,7 @@ export function createSpeakOutButton(parentEl: HTMLElement): HTMLButtonElement {
 export class SpeakOutButton extends MarkdownRenderChild {
 	constructor(
 		private readonly buttonEl: HTMLButtonElement,
-		private readonly text: string,
+		private readonly speechRequest: SpeechRequest,
 		private readonly speechService: SpeechService,
 	) {
 		super(buttonEl);
@@ -40,17 +40,19 @@ export class SpeakOutButton extends MarkdownRenderChild {
 			event.preventDefault();
 			event.stopPropagation();
 
+			const { text } = this.speechRequest;
 			debugLog('Speak-out button clicked.', {
-				...getTextDebugInfo(this.text),
+				...getTextDebugInfo(text),
+				language: this.speechRequest.language,
 			});
 
-			if (!this.text) {
+			if (!text) {
 				debugLog('Speak-out click ignored because text is empty.');
 				new Notice('No text to speak.');
 				return;
 			}
 
-			this.speechService.speak(this.text);
+			this.speechService.speak(this.speechRequest);
 		});
 	}
 

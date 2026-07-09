@@ -12,6 +12,11 @@ import type { SpeakOutSettings } from './settings';
 
 type SpeechVoiceSelection = Pick<SpeakOutSettings, 'voiceEngineId' | 'voiceId'>;
 
+export interface SpeechRequest {
+	text: string;
+	language: string | null;
+}
+
 export class SpeechService {
 	private speechEngine: SpeechEngine;
 	private speechRequestId = 0;
@@ -23,18 +28,22 @@ export class SpeechService {
 		this.speechEngine = speechEngine;
 	}
 
-	speak(text: string) {
-		this.speakWithVoice(text, {
+	speak(request: SpeechRequest) {
+		this.speakWithVoice(request, {
 			voiceEngineId: this.settings.voiceEngineId,
 			voiceId: this.settings.voiceId,
 		});
 	}
 
 	previewVoice(text: string, voiceSelection: SpeechVoiceSelection) {
-		this.speakWithVoice(text, voiceSelection);
+		this.speakWithVoice({ text, language: null }, voiceSelection);
 	}
 
-	private speakWithVoice(text: string, voiceSelection: SpeechVoiceSelection) {
+	private speakWithVoice(
+		request: SpeechRequest,
+		voiceSelection: SpeechVoiceSelection,
+	) {
+		const { text } = request;
 		debugLog('Speech requested.', getTextDebugInfo(text));
 
 		const speechEngine = this.getSpeechEngine();
@@ -49,7 +58,7 @@ export class SpeechService {
 		speechEngine.speak(
 			text,
 			{
-				defaultLanguage: this.settings.defaultLanguage,
+				language: this.getRequestLanguage(request, voiceSelection),
 				voiceEngineId: voiceSelection.voiceEngineId,
 				voiceId: voiceSelection.voiceId,
 			},
@@ -92,6 +101,17 @@ export class SpeechService {
 
 	private isCurrentRequest(requestId: number): boolean {
 		return this.speechRequestId === requestId;
+	}
+
+	private getRequestLanguage(
+		request: SpeechRequest,
+		voiceSelection: SpeechVoiceSelection,
+	): string {
+		if (voiceSelection.voiceId) {
+			return '';
+		}
+
+		return request.language ?? this.settings.defaultLanguage;
 	}
 
 	private getSpeechEngine(): SpeechEngine {

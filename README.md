@@ -34,6 +34,14 @@ The shorter `data-speak` attribute is also supported:
 
 You can choose the HTML tag that best matches the content. `span` works well for inline text, `mark` works well for highlighted text, and block elements such as `div` work for longer sections.
 
+Add a standard `lang` attribute when a marked HTML element should use a specific language with the system default voice:
+
+```html
+<span data-speak-out lang="fr-FR">Bonjour tout le monde.</span>
+```
+
+If `lang` is missing, Speak Out uses the default language setting. If both are empty, the system chooses automatically. The `lang` attribute is ignored when you choose a specific voice because that voice controls its own language.
+
 ### Markdown link markers
 
 Use a marker-only Markdown link when you want quick inline markup:
@@ -58,7 +66,7 @@ Speak Out adds a settings tab with controls for marker handling and speech outpu
 - **Markdown link markers**: Enable marker-only links such as `[text](speak:)` and `[text](speak-out:)`.
 - **HTML data attribute markers**: Enable HTML elements marked with `data-speak-out` or `data-speak`.
 - **Speech engine**: Choose from supported text-to-speech engines on the current device.
-- **Default language**: Choose the language used when **Voice** is set to **System default**, or choose **System default** to let the system decide.
+- **Default language**: Choose the language used when **Voice** is set to **System default** and marked content has no `lang` attribute, or choose **System default** to let the system decide.
 - **Voice**: Choose a voice for the selected engine, or use the system default.
 - **Listen**: Preview the selected voice.
 - **Refresh**: Reload the available voice list.

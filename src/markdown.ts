@@ -69,8 +69,11 @@ export function registerSpeakOutPostProcessor(
 				continue;
 			}
 
+			const language = getElementLanguage(markedEl);
+
 			debugLog('Processing speak-out marker.', {
 				docId: ctx.docId,
+				language,
 				tagName: markedEl.tagName,
 				...getTextDebugInfo(text),
 			});
@@ -79,7 +82,14 @@ export function registerSpeakOutPostProcessor(
 
 			markSpeakOutContentElement(markedEl);
 			markedEl.insertAdjacentElement('afterend', buttonEl);
-			ctx.addChild(new SpeakOutButton(buttonEl, text, speechService));
+			ctx.addChild(new SpeakOutButton(
+				buttonEl,
+				{
+					text,
+					language,
+				},
+				speechService,
+			));
 
 			debugLog('Inserted speak-out button.', {
 				docId: ctx.docId,
@@ -99,4 +109,12 @@ function markSpeakOutContentElement(el: HTMLElement) {
 	if (!el.hasAttribute('title')) {
 		el.setAttribute('title', SPEAK_OUT_CONTENT_TITLE);
 	}
+}
+
+function getElementLanguage(el: HTMLElement): string | null {
+	if (!el.hasAttribute('lang')) {
+		return null;
+	}
+
+	return el.getAttribute('lang')?.trim() ?? '';
 }

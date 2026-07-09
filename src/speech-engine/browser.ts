@@ -80,8 +80,8 @@ export class BrowserSpeechEngine extends SpeechEngine {
 		if (voice !== null) {
 			utterance.voice = voice;
 			utterance.lang = voice.lang;
-		} else if (!options.voiceId && options.defaultLanguage) {
-			utterance.lang = options.defaultLanguage;
+		} else if (!options.voiceId && options.language) {
+			utterance.lang = options.language;
 		}
 
 		this.currentUtterance = utterance;
